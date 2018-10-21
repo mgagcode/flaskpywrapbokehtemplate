@@ -70,9 +70,6 @@ def page_toolbar_menu(w, doc_layout, args, user, buttons=[]):
         _tool_bar_row.append(button)
     doc_layout.children.append(row(_tool_bar_row))
 
-    w.add_css("toolbarclass", {'div': {'background-color': '#5F9EA0'}})
-    #w.render_div(doc_layout, cls="toolbarclass")
-
 
 def index_toolbar_menu(w, doc_layout, args):
     w.add("b_login", Button(label="LOGIN", width=TITLEBAR_LOGIN_BTN_WIDTH, css_classes=['b_submit']))
@@ -83,8 +80,6 @@ def index_toolbar_menu(w, doc_layout, args):
                                    w.get("b_login"), sizing_mode="fixed"))
 
     w.add_css("b_login", {'button': {'background-color': '#98FB98', 'min-width': '50px'}})
-    w.add_css("toolbarclass", {'div': {'background-color': '#5F9EA0'}})
-    #w.render_div(doc_layout, cls="toolbarclass")
 
 
 def index_menu_redirect(args):
