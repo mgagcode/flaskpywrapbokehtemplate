@@ -28,6 +28,19 @@ common_login_signup = Blueprint('common_login_signup', __name__)
 
 @common_login_signup.route(PAGE_URL, methods=['GET', 'POST'])
 def login_signup():
+
+    w = WrapBokeh(PAGE_URL, app.logger)
+
+    w.add("tin_fname", TextInput(title="First Name:", placeholder="", css_classes=['tin_fname']))
+    w.add("tin_lname", TextInput(title="Last Name:", placeholder="", css_classes=['tin_lname']))
+    w.add("tin_uname", TextInput(title="User Name:", placeholder="", css_classes=['tin_uname']))
+    w.add("tin_lpw", PasswordInput(title="Password:", placeholder="", css_classes=['tin_lpw']))
+    w.add("tin_lpw_confirm", PasswordInput(title="Confirm Password:", placeholder="", css_classes=['tin_lpw_confirm']))
+    w.add("tin_email", TextInput(title="Email:", placeholder="", css_classes=['tin_email']))
+    w.add("b_submit", Button(label="Submit", css_classes=['b_submit']))
+
+    w.init()
+
     # Create a dominate document, see https://github.com/Knio/dominate
     # this line should go after any "return redirect" statements
     w.dominate_document()
@@ -58,8 +71,6 @@ def login_signup():
     doc_layout = layout(sizing_mode='scale_width')
     index_toolbar_menu(w, doc_layout, args)
 
-    doc_layout = layout(sizing_mode='scale_width')
-
     # show error fields... if any
     if submitted and not validated:
         for key, value in error_fields.items():
@@ -86,16 +97,4 @@ def login_signup():
 
     return w.render(doc_layout)
 
-
-w = WrapBokeh(PAGE_URL, app.logger)
-
-w.add("tin_fname", TextInput(title="First Name:", placeholder="", css_classes=['tin_fname']))
-w.add("tin_lname", TextInput(title="Last Name:", placeholder="", css_classes=['tin_lname']))
-w.add("tin_uname", TextInput(title="User Name:", placeholder="", css_classes=['tin_uname']))
-w.add("tin_lpw", PasswordInput(title="Password:", placeholder="", css_classes=['tin_lpw']))
-w.add("tin_lpw_confirm", PasswordInput(title="Confirm Password:", placeholder="", css_classes=['tin_lpw_confirm']))
-w.add("tin_email", TextInput(title="Email:", placeholder="", css_classes=['tin_email']))
-w.add("b_submit", Button(label="Submit", css_classes=['b_submit']))
-
-w.init()
 

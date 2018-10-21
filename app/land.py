@@ -32,6 +32,9 @@ def land():
     if not session.get('user_id', False): return redirect(COMMON_URL_LOGIN)
     user = User.get_by_id(session['user_id'])
 
+    w = WrapBokeh(PAGE_URL, app.logger)
+    w.init()
+
     # Create a dominate document, see https://github.com/Knio/dominate
     # this line should go after any "return redirect" statements
     w.dominate_document()
@@ -47,13 +50,6 @@ def land():
     doc_layout = layout(sizing_mode="fixed")
     page_toolbar_menu(w, doc_layout, args, user)
 
-    doc_layout = layout(sizing_mode='scale_width')
-
     doc_layout.children.append(Div(text="""<h1>Your Stuff Goes Here...</h1>"""))
 
     return w.render(doc_layout)
-
-
-w = WrapBokeh(PAGE_URL, app.logger)
-
-w.init()

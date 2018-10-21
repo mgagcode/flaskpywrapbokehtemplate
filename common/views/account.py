@@ -32,12 +32,26 @@ def account_edit():
     # TODO: This needs to be a decorator
     if not session.get('user_id', False): return redirect(COMMON_URL_LOGIN)
 
+    w = WrapBokeh(PAGE_URL, app.logger)
+
+    w.add("tin_fname", TextInput(title="First Name:", placeholder="", css_classes=['tin_fname']))
+    w.add("tin_lname", TextInput(title="Last Name:", placeholder="", css_classes=['tin_lname']))
+    w.add("tin_uname", TextInput(title="User Name:", placeholder="", css_classes=['tin_uname']))
+    w.add("tin_lpw", PasswordInput(title="Password:", placeholder="", css_classes=['tin_lpw']))
+    w.add("tin_lpw_confirm", PasswordInput(title="Confirm Password:", placeholder="", css_classes=['tin_lpw_confirm']))
+    w.add("tin_email", TextInput(title="Email:", placeholder="", css_classes=['tin_email']))
+    w.add("b_submit", Button(label="Submit", css_classes=['b_submit']))
+    w.add("b_cancel", Button(label="Cancel", css_classes=['b_cancel']))
+
+    w.init()
+
     user = User.get_by_id(session['user_id'])
     if user is None:
         app.logger.error("Unable to find user id {}".format(session['user_id']))
         session.pop('user_id')
         w.get("tin_uname").placeholder = ""
         redirect(COMMON_URL_INDEX)
+
 
     # NOTE: !! This needs to be before the page renders
     #       !! so that the default values are populated
@@ -90,8 +104,6 @@ def account_edit():
     doc_layout = layout(sizing_mode="fixed")
     page_toolbar_menu(w, doc_layout, args, user)
 
-    doc_layout = layout(sizing_mode='scale_width')
-
     # show error fields... if any
     if submitted and not validated:
         for key, value in error_fields.items():
@@ -120,16 +132,5 @@ def account_edit():
     return w.render(doc_layout)
 
 
-w = WrapBokeh(PAGE_URL, app.logger)
 
-w.add("tin_fname", TextInput(title="First Name:", placeholder="", css_classes=['tin_fname']))
-w.add("tin_lname", TextInput(title="Last Name:", placeholder="", css_classes=['tin_lname']))
-w.add("tin_uname", TextInput(title="User Name:", placeholder="", css_classes=['tin_uname']))
-w.add("tin_lpw", PasswordInput(title="Password:", placeholder="", css_classes=['tin_lpw']))
-w.add("tin_lpw_confirm", PasswordInput(title="Confirm Password:", placeholder="", css_classes=['tin_lpw_confirm']))
-w.add("tin_email", TextInput(title="Email:", placeholder="", css_classes=['tin_email']))
-w.add("b_submit", Button(label="Submit", css_classes=['b_submit']))
-w.add("b_cancel", Button(label="Cancel", css_classes=['b_cancel']))
-
-w.init()
 

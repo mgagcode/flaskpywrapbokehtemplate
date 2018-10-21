@@ -24,10 +24,19 @@ from common.models import User
 PAGE_URL = COMMON_URL_LOGIN
 
 common_login = Blueprint('common_login', __name__)
-
-
 @common_login.route(PAGE_URL, methods=['GET', 'POST'])
 def login():
+
+    w = WrapBokeh(PAGE_URL, app.logger)
+
+    w.add("tin_uname", TextInput(title="Login Name:", placeholder="", css_classes=['tin_lname']))
+    w.add("tin_lpw", PasswordInput(title="Password:", placeholder="", css_classes=['tin_lpw']))
+    w.add("b_submit", Button(label="Submit", css_classes=['b_submit']))
+    w.add("b_signup", Button(label="Sign Up", css_classes=['b_signup']))
+    w.add("b_recover", Button(label="Recover Password", css_classes=['b_recover']))
+
+    w.init()
+
     # Create a dominate document, see https://github.com/Knio/dominate
     # this line should go after any "return redirect" statements
     w.dominate_document()
@@ -81,15 +90,3 @@ def login():
     doc_layout.children.append(row([Spacer(width=left_margin), wbox]))
 
     return w.render(doc_layout)
-
-
-w = WrapBokeh(PAGE_URL, app.logger)
-
-w.add("tin_uname", TextInput(title="Login Name:", placeholder="", css_classes=['tin_lname']))
-w.add("tin_lpw", PasswordInput(title="Password:", placeholder="", css_classes=['tin_lpw']))
-w.add("b_submit", Button(label="Submit", css_classes=['b_submit']))
-w.add("b_signup", Button(label="Sign Up", css_classes=['b_signup']))
-w.add("b_recover", Button(label="Recover Password", css_classes=['b_recover']))
-
-w.init()
-

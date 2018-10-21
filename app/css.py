@@ -1,7 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+import copy
 from flask import current_app as app
-from flask import url_for
+from flask import url_for, session
 from dominate.tags import *
 from dominate.util import raw
 from urllib.parse import urlparse
@@ -11,103 +12,103 @@ from bokeh.layouts import row, Spacer
 from bokeh.models.widgets.buttons import Dropdown, Button
 from bokeh.models.widgets import Div
 
+TITLEBAR_LOGIN_BTN_WIDTH = 50
+TITLEBAR_MENU_WIDTH      = 150
+TITLEBAR_TITLE_WIDTH     = 350
+TITLEBAR_SPACER          = 20
+
 
 def url_page_css(dom_doc, url):
     bkgnd_url = url_for('static', filename='media/sharon-mccutcheon-576867-unsplash.jpg', _external=False)
 
     with dom_doc.body:
-
-        if url in [COMMON_URL_INDEX, COMMON_URL_LOGIN, COMMON_URL_LOGIN_SIGNUP, COMMON_URL_LOGIN_RECOVER,
-                   COMMON_URL_LAND, COMMON_URL_ACCOUNT, COMMON_URL_ROLES]:
-            style(raw("""body {{background: #ffffff url("{}") no-repeat left top;)}}""".format(bkgnd_url)))
-            style(raw("""body {background-size: cover;)}"""))
-        else:
-            app.logger.error("Unknown URL: {}".format(url))
+        style(raw("""body {{background: #ffffff url("{}") no-repeat left top;)}}""".format(bkgnd_url)))
+        style(raw("""body {background-size: cover;)}"""))
 
 
-def page_toolbar_menu(w, doc_layout, args, user):
-    #space_center = int(int(args.get("windowWidth", 800)) * 0.5)
+# menu base here has all the common items, app:start.py needs to add other menu items
+_page_toolbar_menu = [
+    {"entry": ("Main", 'Main'), "url": COMMON_URL_LAND, "title": "Main"},
 
+    # ADD Your Menu Items Here...
+
+    {"entry": None, "url": None, "title": None},  # line divider
+    {"entry": ("Account", 'Account'), "url": COMMON_URL_ACCOUNT, "title": "Edit Account"},
+    {"entry": ("Roles", "Roles"), "url": COMMON_URL_ROLES, "title": "Edit Roles"},
+    {"entry": None, "url": None, "title": None},  # line divider
+    {"entry": ("Logout", 'Logout'), "url": COMMON_URL_INDEX, "title": "Logout"},
+]
+
+
+def page_toolbar_menu_add(idx, entry, url, title):
+    menu = {"entry": (entry, entry), "url": url, "title": title}
+    _page_toolbar_menu.insert(idx, menu)
+
+
+def page_toolbar_menu(w, doc_layout, args, user, buttons=[]):
     url = urlparse(args.get("windowUrl", ""))
 
-    _menu = [
-        ("Main", 'Main'),
-        None,  # line divider
-        ("Account", 'Account'),
-        ("Roles", "Roles"),
-        None,  # line divider
-        ("Logout", 'Logout')
-    ]
+    _new_menu = copy.deepcopy(_page_toolbar_menu)
+    sub_title = ""
 
-    page = ""
-    if url.path == COMMON_URL_LAND:
-        page = 'Main'
-        _menu.remove(("Main", 'Main'))
-    elif url.path == COMMON_URL_ACCOUNT:
-        page = 'Edit Account'
-        _menu.remove(("Account", 'Account'))
-    elif url.path == COMMON_URL_ROLES:
-        page = 'Edit Roles'
-        _menu.remove(("Roles", "Roles"))
-    else:
-        app.logger.warning("{} not handled".format(url.path))
+    for entry in _page_toolbar_menu:
+        if url.path == entry["url"]:
+            _new_menu.remove(entry)
+            sub_title = entry["title"]
+            break  # only one entry will match
 
-    if not w.exist("toolbar_menu"):
-        w.add("toolbar_menu", Dropdown(label=user.username, menu=_menu, width=150, css_classes=['toolbar_menu']))
-        w.init()
-    else:
-        w.get("toolbar_menu").label = user.username
-        w.get("toolbar_menu").menu = _menu
+    _new_menu = [x["entry"] for x in _new_menu]
+
+    w.add("toolbar_menu", Dropdown(label=user.username, menu=_new_menu, width=TITLEBAR_MENU_WIDTH, css_classes=['toolbar_menu']))
+    w.init()
 
     title = app.config["app"]["title"]
-    doc_layout.children.append(row(Div(text="""<h1>{} - {}</h1>""".format(title, page)),
-                                   Spacer(width=20),
-                                   w.get("toolbar_menu"), sizing_mode="fixed"))
+    _tool_bar_row = [Div(text="""<h1>{} - {}</h1>""".format(title, sub_title), width=TITLEBAR_TITLE_WIDTH)]
+    _tool_bar_row.append(w.get("toolbar_menu"))
+    for button in buttons:
+        _tool_bar_row.append(Spacer(width=TITLEBAR_SPACER))
+        _tool_bar_row.append(button)
+    doc_layout.children.append(row(_tool_bar_row))
 
     w.add_css("toolbarclass", {'div': {'background-color': '#5F9EA0'}})
-    w.render_div(doc_layout, cls="toolbarclass")
+    #w.render_div(doc_layout, cls="toolbarclass")
 
 
 def index_toolbar_menu(w, doc_layout, args):
-    #space_center = int(int(args.get("windowWidth", 800)) * 0.5)
-
-    if not w.exist("b_login"):
-        w.add("b_login", Button(label="LOGIN", width=50, css_classes=['b_submit']))
-        w.init()
+    w.add("b_login", Button(label="LOGIN", width=TITLEBAR_LOGIN_BTN_WIDTH, css_classes=['b_submit']))
 
     title = app.config["app"]["title"]
-    doc_layout.children.append(row(Div(text="""<h1>{}</h1>""".format(title)),
-                                   Spacer(width=20),
+    doc_layout.children.append(row(Div(text="""<h1>{}</h1>""".format(title), width=TITLEBAR_TITLE_WIDTH),
+                                   Spacer(width=TITLEBAR_SPACER),
                                    w.get("b_login"), sizing_mode="fixed"))
 
     w.add_css("b_login", {'button': {'background-color': '#98FB98', 'min-width': '50px'}})
-
     w.add_css("toolbarclass", {'div': {'background-color': '#5F9EA0'}})
-    w.render_div(doc_layout, cls="toolbarclass")
+    #w.render_div(doc_layout, cls="toolbarclass")
 
 
 def index_menu_redirect(args):
+
+    # for debugging... log in directly
+    if 0:
+        session['user_id'] = 2
+        return True, COMMON_URL_LAND
+
     if args.get("b_login", False): return True, COMMON_URL_LOGIN
 
     return False, None
 
 
 def toolbar_menu_redirect(args):
-    toolbar_menu = args.get("toolbar_menu", "_")
+    if args.get("callerWidget", "") != "toolbar_menu": return False, None
+    toolbar_menu = args.get("toolbar_menu", "")
+    if toolbar_menu in ["", 'null']: return False, None
 
-    if toolbar_menu == "": return False, None
-
-    if toolbar_menu == "Logout":
-        return True, COMMON_URL_INDEX
-
-    if toolbar_menu == "Account":
-        return True, COMMON_URL_ACCOUNT
-
-    if toolbar_menu == "Roles":
-        return True, COMMON_URL_ROLES
-
-    if toolbar_menu == "Main":
-        return True, COMMON_URL_LAND
+    for entry in _page_toolbar_menu:
+        if entry["entry"] is None: continue
+        if toolbar_menu == entry["entry"][0]:
+            app.logger.info("toolbar {} -> {}".format(toolbar_menu, entry["url"]))
+            return True, entry["url"]
 
     app.logger.warning("{} not handled".format(args.get("toolbar_menu")))
     return False, None
