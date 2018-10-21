@@ -24,6 +24,15 @@ common_login_recover = Blueprint('common_login_recover', __name__)
 
 @common_login_recover.route(PAGE_URL, methods=['GET', 'POST'])
 def login_recover():
+    w = WrapBokeh(PAGE_URL, app.logger)
+
+    w.add("tin_uname_only", TextInput(title="User Name:", placeholder="", css_classes=['tin_uname_only']))
+    w.add("tin_email_only", TextInput(title="Email:", placeholder="", css_classes=['tin_email_only']))
+    w.add("b_submit", Button(label="Submit", css_classes=['b_submit']))
+    w.add("b_ok", Button(label="Ok", css_classes=['b_ok']))
+
+    w.init()
+
     # Create a dominate document, see https://github.com/Knio/dominate
     # this line should go after any "return redirect" statements
     w.dominate_document()
@@ -84,7 +93,7 @@ def login_recover():
         doc_layout.children.append(row([Spacer(width=left_margin), w.get("b_ok")]))
 
     elif failed_credentials_match:
-        doc_layout.children.append(row([Spacer(width=left_margin), Div(text="""<h1>Those credentials did not match a known user.</h1>""")]))
+        doc_layout.children.append(row([Spacer(width=left_margin), Div(text="""<h1>Those credentials did not match a known user.</h1>""", height=150)]))
         doc_layout.children.append(row([Spacer(width=left_margin), w.get("b_ok")]))
 
     else:
@@ -95,14 +104,4 @@ def login_recover():
         doc_layout.children.append(row([Spacer(width=left_margin), wbox]))
 
     return w.render(doc_layout)
-
-
-w = WrapBokeh(PAGE_URL, app.logger)
-
-w.add("tin_uname_only", TextInput(title="User Name:", placeholder="", css_classes=['tin_uname_only']))
-w.add("tin_email_only", TextInput(title="Email:", placeholder="", css_classes=['tin_email_only']))
-w.add("b_submit", Button(label="Submit", css_classes=['b_submit']))
-w.add("b_ok", Button(label="Ok", css_classes=['b_ok']))
-
-w.init()
 
