@@ -6,41 +6,25 @@ Example using WrapBokeh
 
 """
 import os
-import sys
 import logging
 import logging.handlers as handlers
 
-from flask import current_app as app
 
-
-def redirect_lookup_table(value):
-    if not value: return None
-
-    app.logger.info(value)
-    if   '1' in value: return "/a/"
-    elif '2' in value: return "/b/"
-    elif '3' in value: return "/c/"
-    elif '0' in value: return "/"
-    else:
-        app.logger.error("Unknown link request: {}".format(value))
-
-    return None
-
-
-def setup_logging(log_file_name_prefix=__file__, path=".\log", level=logging.INFO, addConsole=False):
-
+def setup_logging(log_file_name_prefix=__file__, level=logging.INFO, path="..\log"):
     # FIXME: logs are coming out "twice", once with the format from flask, and again from
     #        the format from consoleHandler.  app.logger level and the console handler
     #        level seem to be linked
-    app.logger.setLevel(level)
+
+    logger = logging.getLogger("TMI")
+    logger.setLevel(logging.INFO)
 
     log_file_name_prefix = os.path.basename(log_file_name_prefix)
 
-    # Here we define our formatter
-    FORMAT = "%(relativeCreated)6d %(threadName)15s %(filename)25s:%(lineno)4s - %(name)30s:%(funcName)20s() %(levelname)-5.5s : %(message)s"
-    formatter = logging.Formatter(FORMAT)
-
     if not os.path.exists(path): os.makedirs(path)
+
+    # Here we define our formatter
+    FORMAT = "%(asctime)s %(threadName)15s %(filename)25s:%(lineno)4s - %(name)30s:%(funcName)20s() %(levelname)-5.5s : %(message)s"
+    formatter = logging.Formatter(FORMAT)
 
     allLogHandler_filename = os.path.join(path, "".join([log_file_name_prefix, ".log"]))
     allLogHandler = handlers.RotatingFileHandler(allLogHandler_filename, maxBytes=1024 * 1024, backupCount=4)
@@ -52,18 +36,11 @@ def setup_logging(log_file_name_prefix=__file__, path=".\log", level=logging.INF
     errorLogHandler.setLevel(logging.ERROR)
     errorLogHandler.setFormatter(formatter)
 
-    consoleHandler = logging.StreamHandler(stream=sys.stdout)
+    # TODO: consider coloring logs, https://stackoverflow.com/questions/384076/how-can-i-color-python-logging-output
+
+    consoleHandler = logging.StreamHandler()
     consoleHandler.setFormatter(formatter)
-    consoleHandler.setLevel(level)
 
-    app.logger.addHandler(allLogHandler)
-    app.logger.addHandler(errorLogHandler)
-
-    if addConsole:
-        app.logger.addHandler(consoleHandler)  # FIXME: reinstate when above fixme is fixed
-
-    # this did not work :(
-    # https://stackoverflow.com/questions/27775026/provide-extra-information-to-flasks-app-logger
-
-    # this looks interesting
-    # https://stackoverflow.com/questions/45775367/log-messages-not-printed-by-flask-in-my-custom-flask-extension
+    logger.addHandler(allLogHandler)
+    logger.addHandler(errorLogHandler)
+    logger.addHandler(consoleHandler)

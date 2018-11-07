@@ -5,6 +5,7 @@
 Example using WrapBokeh
 
 """
+import logging
 from bokeh.layouts import row, layout, Spacer, widgetbox, column
 from bokeh.models.widgets.inputs import TextInput, PasswordInput
 from bokeh.models.widgets.buttons import Button
@@ -26,8 +27,9 @@ PAGE_URL = COMMON_URL_LOGIN
 common_login = Blueprint('common_login', __name__)
 @common_login.route(PAGE_URL, methods=['GET', 'POST'])
 def login():
+    logger = logging.getLogger("TMI.login")
 
-    w = WrapBokeh(PAGE_URL, app.logger)
+    w = WrapBokeh(PAGE_URL, logger)
 
     w.add("tin_uname", TextInput(title="Login Name:", placeholder="", css_classes=['tin_lname']))
     w.add("tin_lpw", PasswordInput(title="Password:", placeholder="", css_classes=['tin_lpw']))
@@ -44,7 +46,7 @@ def login():
 
     args, _redirect_page_metrics = w.process_req(request)
     if not args: return _redirect_page_metrics
-    app.logger.info("{} : args {}".format(PAGE_URL, args))
+    logger.info("{} : args {}".format(PAGE_URL, args))
     left_margin = int(int(args.get("windowWidth", 800)) * 0.1)
 
     redir, url = index_menu_redirect(args)
@@ -61,11 +63,11 @@ def login():
         if uname is not None and pw is not None:
             user = User.login(uname, pw)
             if user is not None:
-                app.logger.info("{} {}".format(user.username, user.id))
+                logger.info("{} {}".format(user.username, user.id))
                 session['user_id'] = user.id
                 return redirect(COMMON_URL_LAND)
             else:
-                app.logger.info("Login failed for {}".format(uname))
+                logger.info("Login failed for {}".format(uname))
                 login_failed = True
 
     doc_layout = layout(sizing_mode='scale_width')

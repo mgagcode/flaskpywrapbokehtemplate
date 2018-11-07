@@ -5,8 +5,8 @@
 Example using WrapBokeh
 
 """
+import logging
 from bokeh.layouts import layout
-from bokeh.models.widgets.buttons import Button
 from bokeh.models.widgets import Div
 
 from flask import redirect, Blueprint, session
@@ -25,6 +25,8 @@ common_index = Blueprint('common_index', __name__)
 
 @common_index.route(PAGE_URL, methods=['GET', 'POST'])
 def index():
+    logger = logging.getLogger("TMI.index")
+
     session.clear()
 
     w = WrapBokeh(PAGE_URL, app.logger)
@@ -36,7 +38,7 @@ def index():
 
     args, _redirect_page_metrics = w.process_req(request)
     if not args: return _redirect_page_metrics
-    app.logger.info("{} : args {}".format(PAGE_URL, args))
+    logger.info("{} : args {}".format(PAGE_URL, args))
 
     redir, url = index_menu_redirect(args)
     if redir: return redirect(url)

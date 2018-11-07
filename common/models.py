@@ -10,6 +10,9 @@ from flask import current_app as app
 import datetime
 from cerberus import Validator
 
+import logging
+logger = logging.getLogger("TMI.models")
+
 
 class RolesUsers(Base):
     __tablename__ = 'roles_users'
@@ -26,6 +29,9 @@ class RolesUsers(Base):
         NOTE: checked with from timeit import default_timer as timer
               and this function is very fast, 2-5ms, not worth switching to sql
         """
+
+        if user.username == "admin": return True
+
         s = Session()
         user_roles = s.query(RolesUsers.role_id).filter(RolesUsers.user_id == user.id).all()
         if isinstance(role_name, list):
@@ -42,8 +48,11 @@ class RolesUsers(Base):
 
         s.close()
         has_role = any(x in user_roles for x in role_id)
-        app.logger.info("Required {} -> {} User's (any one of) == {}".format(role_id, user_roles, has_role))
+        logger.info("Required {} -> {} User's (any one of) == {}".format(role_id, user_roles, has_role))
         return has_role
+
+    def user_enabled(user):
+        return RolesUsers.user_has_role(user, "ENABLED")
 
 
 class Role(Base):
@@ -177,7 +186,7 @@ class User(Base):
 
     def get_form_error_handle_from_err(key, err):
         if not User().schema_error.get(key, False):
-            app.logger.error("{} not found in schema_error".format(key))
+            logger.error("{} not found in schema_error".format(key))
             return None
 
         for error in User().schema_error[key]['errors']:
@@ -185,7 +194,7 @@ class User(Base):
                 if err_type in err:
                     return error
 
-        app.logger.error("{} error {} not found in schema_error".format(key, err))
+        logger.error("{} error {} not found in schema_error".format(key, err))
         return {'err': [],
                 "msg": "!UNKNOWN ERROR!",
                 "css": {},
@@ -253,11 +262,11 @@ class User(Base):
         try:
             user_update = session.query(User).filter(User.username == original_username).one()
         except Exception as e:
-            app.logger.error(e)
+            logger.error(e)
             user_update = None
 
         if user_update is None:
-            app.logger.error("User is None, cannot update, something bad happened")
+            logger.error("User is None, cannot update, something bad happened")
             session.close()
             return False
 
@@ -269,7 +278,7 @@ class User(Base):
 
         session.commit()
         session.close()
-        app.logger.info("User {} updated".format(username))
+        logger.info("User {} updated".format(username))
         return True
 
     def update_roles(user, roles):
@@ -278,14 +287,14 @@ class User(Base):
         try:
             user_update = session.query(User).filter(User.username == user.username).one()
         except Exception as e:
-            app.logger.error(e)
+            logger.error(e)
             user_update = None
 
         if user_update is None:
             session.close()
             return False
 
-        app.logger.info(roles)
+        logger.info(roles)
         new_roles = []
         for role in roles:
             new_roles.append(session.query(Role).filter(Role.name == role).one())
@@ -294,24 +303,27 @@ class User(Base):
 
         session.commit()
         session.close()
-        app.logger.info("User {} updated".format(user.username))
+        logger.info("User {} updated".format(user.username))
         return True
 
     def login(username, password):
         session = Session()
+        enabled = False
         try:
             user = session.query(User).filter(User.username == username and
                                               User.password == password).one()
+            enabled = RolesUsers.user_enabled(user)
         except:
             user = None
         session.close()
-        app.logger.info(user)
-        return user
+        logger.info(user, enabled)
+        if enabled: return user
+        return None
 
     def get_username(username, all=False):
         session = Session()
         users = []
-
+        logger.info("get_username: {}".format(username))
         try:
             if not all and isinstance(username, str):
                 users = session.query(User).filter(User.username == username).one()
@@ -320,10 +332,10 @@ class User(Base):
             elif all:
                 users = session.query(User).order_by(User.username).all()
             else:
-                app.logger.error("Bad request")  # should never get here
+                logger.error("Bad request")  # should never get here
         except Exception as e:
-            app.logger.error("ERROR: called parms: {} {}".format(username, all))
-            app.logger.error(e)
+            logger.error("ERROR: called parms: {} {}".format(username, all))
+            logger.error(e)
 
         session.close()
         return users
@@ -344,7 +356,7 @@ class User(Base):
         except:
             user = None
         session.close()
-        app.logger.info(user)
+        logger.info(user)
         return user
 
 

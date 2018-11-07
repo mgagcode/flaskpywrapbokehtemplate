@@ -27,6 +27,7 @@ class GUI(Const):
     INPUT_VALID = "#7FFFD4"
     INPUT_INVALID = "#FFB6C1"
 
+    # test portal control buttons
     BUTTON_ENABLED_GREEN = "#98FB98"
-    BUTTON_DISABLED_GRAY = "A9A9A9"
+    BUTTON_DISABLED_GRAY = "#A9A9A9"
     BUTTON_CANCEL = "#CD5C5C"

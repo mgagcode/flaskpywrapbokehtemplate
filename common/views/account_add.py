@@ -10,7 +10,7 @@ from bokeh.models.widgets.inputs import TextInput, PasswordInput
 from bokeh.models.widgets.buttons import Button
 from bokeh.models.widgets import Div
 
-from flask import redirect, abort, Blueprint, session
+from flask import redirect, Blueprint, session
 from flask import request
 from flask import current_app as app
 
@@ -21,18 +21,16 @@ from app.urls import *
 
 from common.models import User, RolesUsers
 
-PAGE_URL = COMMON_URL_ACCOUNT
+PAGE_URL = COMMON_URL_ACCOUNT_ADD
 
-common_account_edit = Blueprint('common_account_edit', __name__)
-
-
-@common_account_edit.route(PAGE_URL, methods=['GET', 'POST'])
-def account_edit():
+common_account_add = Blueprint('common_account_add', __name__)
+@common_account_add.route(PAGE_URL, methods=['GET', 'POST'])
+def common__account_add():
 
     # TODO: This needs to be a decorator
     if not session.get('user_id', False): return redirect(COMMON_URL_LOGIN)
     user = User.get_by_id(session['user_id'])
-    if user is None or not RolesUsers.user_has_role(user, ["ACCOUNT"]):
+    if user is None or not RolesUsers.user_has_role(user, ["ADMIN", "ADD-USER"]):
         # this should never happen... logout if it does...
         app.logger.error("Unable to find user id {}".format(session['user_id']))
         session.pop('user_id', None)
@@ -47,27 +45,8 @@ def account_edit():
     w.add("tin_lpw_confirm", PasswordInput(title="Confirm Password:", placeholder="", css_classes=['tin_lpw_confirm']))
     w.add("tin_email", TextInput(title="Email:", placeholder="", css_classes=['tin_email']))
     w.add("b_submit", Button(label="Submit", css_classes=['b_submit']))
-    w.add("b_cancel", Button(label="Cancel", css_classes=['b_cancel']))
 
     w.init()
-
-    user = User.get_by_id(session['user_id'])
-    if user is None:
-        app.logger.error("Unable to find user id {}".format(session['user_id']))
-        session.pop('user_id')
-        w.get("tin_uname").placeholder = ""
-        redirect(COMMON_URL_INDEX)
-
-
-    # NOTE: !! This needs to be before the page renders
-    #       !! so that the default values are populated
-    if w.get("tin_uname").placeholder == "":  # trigger reset the form
-        # populate initial values
-        w.get("tin_fname").placeholder = user.fname
-        w.get("tin_lname").placeholder = user.lname
-        w.get("tin_uname").placeholder = user.username
-        w.get("tin_email").placeholder = user.email
-        session["original_username"] = user.username
 
     # Create a dominate document, see https://github.com/Knio/dominate
     # this line should go after any "return redirect" statements
@@ -79,36 +58,26 @@ def account_edit():
     app.logger.info("{} : args {}".format(PAGE_URL, args))
 
     redir, url = toolbar_menu_redirect(args)
-    if redir:
-        w.get("tin_uname").placeholder = ""
-        return redirect(url)
-
-    if args.get("b_cancel", False):
-        w.get("tin_uname").placeholder = ""
-        return redirect(COMMON_URL_LAND)
+    if redir: return redirect(url)
 
     error_fields = {}
     submitted = args.get("b_submit", False)
     if submitted:
-        validated, error_fields = User.validate(args, True)
+        validated, error_fields = User.validate(args)
 
     # on submit, validate form contents, show errors...
     if submitted and validated:
         app.logger.info("validated: {}".format(args))
-        User.update(original_username=session["original_username"],
-                    first=args["tin_fname"],
-                    last=args["tin_lname"],
-                    username=args["tin_uname"],
-                    password=args["tin_lpw"],
-                    email=args["tin_email"])
-        session.pop('original_username')
-        user = User.get_username(args["tin_uname"])
-        session['user_id'] = user.id
-        w.get("tin_uname").placeholder = ""  # reset the form
-        return redirect(COMMON_URL_LAND)
+        User.add(first=args["tin_fname"],
+                 last=args["tin_lname"],
+                 username=args["tin_uname"],
+                 password=args["tin_lpw"],
+                 email=args["tin_email"])
+        return redirect(COMMON_URL_ACCOUNT_ADD)
 
-    doc_layout = layout(sizing_mode="fixed")
+    doc_layout = layout(sizing_mode='scale_width')
     page_toolbar_menu(w, doc_layout, args, user)
+
 
     # show error fields... if any
     if submitted and not validated:
@@ -120,7 +89,7 @@ def account_edit():
     w.add_css("tin_fname", {'input': {'width': '90%'}})
     w.add_css("tin_lname", {'input': {'width': '90%'}})
     w.add_css("tin_uname", {'input': {'width': '90%'}})
-    w.add_css("tin_lpw",   {'input': {'width': '90%'}})
+    w.add_css("tin_lpw", {'input': {'width': '90%'}})
     w.add_css("tin_lpw_confirm", {'input': {'width': '90%'}})
     w.add_css("tin_email", {'input': {'width': '90%'}})
 
@@ -130,13 +99,10 @@ def account_edit():
                      w.get("tin_lpw"),
                      w.get("tin_lpw_confirm"),
                      w.get("tin_email"),
-                     w.get("b_submit"),
-                     w.get("b_cancel"))
+                     w.get("b_submit"))
     left_margin = int(int(args.get("windowWidth", 800)) * 0.2)
     doc_layout.children.append(row([Spacer(width=left_margin), wbox]))
 
     return w.render(doc_layout)
-
-
 
 

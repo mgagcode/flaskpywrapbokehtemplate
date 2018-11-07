@@ -5,10 +5,10 @@
 Example using WrapBokeh
 
 """
+import logging
 from bokeh.layouts import row, layout, Spacer, widgetbox
 from bokeh.models.widgets.inputs import TextInput, PasswordInput
 from bokeh.models.widgets.buttons import Button
-from bokeh.models.widgets import Div
 
 from flask import redirect, abort, Blueprint
 from flask import request
@@ -28,8 +28,9 @@ common_login_signup = Blueprint('common_login_signup', __name__)
 
 @common_login_signup.route(PAGE_URL, methods=['GET', 'POST'])
 def login_signup():
+    logger = logging.getLogger("TMI.login_recover")
 
-    w = WrapBokeh(PAGE_URL, app.logger)
+    w = WrapBokeh(PAGE_URL, logger)
 
     w.add("tin_fname", TextInput(title="First Name:", placeholder="", css_classes=['tin_fname']))
     w.add("tin_lname", TextInput(title="Last Name:", placeholder="", css_classes=['tin_lname']))
@@ -48,7 +49,7 @@ def login_signup():
 
     args, _redirect_page_metrics = w.process_req(request)
     if not args: return _redirect_page_metrics
-    app.logger.info("{} : args {}".format(PAGE_URL, args))
+    logger.info("{} : args {}".format(PAGE_URL, args))
 
     redir, url = index_menu_redirect(args)
     if redir: return redirect(url)
@@ -60,7 +61,7 @@ def login_signup():
 
     # on submit, validate form contents, show errors...
     if submitted and validated:
-        app.logger.info("validated: {}".format(args))
+        logger.info("validated: {}".format(args))
         User.add(first=args["tin_fname"],
                  last=args["tin_lname"],
                  username=args["tin_uname"],

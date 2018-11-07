@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
+import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -13,6 +13,8 @@ Base = declarative_base()
 
 
 def init_db():
+    logger = logging.getLogger("TMI.login")
+
     # import all modules here that might define models so that
     # they will be registered properly on the metadata.  Otherwise
     # you will have to import them first before calling init_db()
@@ -24,7 +26,7 @@ def init_db():
     roles = [r.name for r in s.query(models.Role).all()]
     for role, desc in app.config["app"]["user"]["roles"].items():
         if role not in roles:
-            app.logger.info("Adding role: {}".format(role))
+            logger.info("Adding role: {}".format(role))
             r = models.Role(name=role, description=desc)
             s.add(r)
             s.commit()
@@ -33,7 +35,7 @@ def init_db():
     for user in app.config["app"]["user"]["users"]:
         user_exists = s.query(models.User).filter(models.User.username == user["username"]).scalar()
         if not user_exists:
-            app.logger.info("Adding default user: {}".format(user["username"]))
+            logger.info("Adding default user: {}".format(user["username"]))
             roles = []
             for role in user["roles"]:
                 roles.append(s.query(models.Role).filter(models.Role.name == role).one())

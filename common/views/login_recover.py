@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
+import logging
 from bokeh.layouts import row, layout, Spacer, widgetbox
 from bokeh.models.widgets.inputs import TextInput, PasswordInput
 from bokeh.models.widgets.buttons import Button
@@ -24,7 +24,9 @@ common_login_recover = Blueprint('common_login_recover', __name__)
 
 @common_login_recover.route(PAGE_URL, methods=['GET', 'POST'])
 def login_recover():
-    w = WrapBokeh(PAGE_URL, app.logger)
+    logger = logging.getLogger("TMI.login_recover")
+
+    w = WrapBokeh(PAGE_URL, logger)
 
     w.add("tin_uname_only", TextInput(title="User Name:", placeholder="", css_classes=['tin_uname_only']))
     w.add("tin_email_only", TextInput(title="Email:", placeholder="", css_classes=['tin_email_only']))
@@ -40,7 +42,7 @@ def login_recover():
 
     args, _redirect_page_metrics = w.process_req(request)
     if not args: return _redirect_page_metrics
-    app.logger.info("{} : args {}".format(PAGE_URL, args))
+    logger.info("{} : args {}".format(PAGE_URL, args))
     left_margin = int(int(args.get("windowWidth", 800)) * 0.2)
 
     if args.get("b_ok", False): return redirect(COMMON_URL_INDEX)
@@ -57,13 +59,12 @@ def login_recover():
         if validated:
             # uname, email format is valid, now lets see if it exists
             user = User.get_username(args.get("tin_uname_only"))
-            print(user)
             if user in [None, []] or user.email != args.get("tin_email_only"):
-                app.logger.error("Invalid username/pw ({}/{}) for login recovery".format(user.username, args.get("tin_email_only")))
+                logger.error("Invalid username/pw ({}/{}) for login recovery".format(user.username, args.get("tin_email_only")))
                 failed_credentials_match = True
 
             if not failed_credentials_match:
-                app.logger.info("user validated, sending recovery email")
+                logger.info("user validated, sending recovery email")
                 temp_pw = "12345"  # FIXME: make a random password
 
                 # TODO: send email

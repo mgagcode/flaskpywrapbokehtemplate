@@ -1,10 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
+import logging
 from bokeh.layouts import row, layout, Spacer, widgetbox
 from bokeh.models.widgets.inputs import TextInput, Select
 from bokeh.models.widgets.buttons import Button
-from bokeh.models.widgets import Div
 from bokeh.models.widgets import CheckboxGroup
 
 from flask import redirect, abort, Blueprint, session
@@ -17,7 +16,7 @@ from app.css import url_page_css, page_toolbar_menu, toolbar_menu_redirect
 from app.urls import *
 
 from common.models import User, Role, RolesUsers
-from common.const import GUI
+from app.const import GUI
 
 PAGE_URL = COMMON_URL_ROLES
 
@@ -26,6 +25,7 @@ common_roles_edit = Blueprint('common_roles_edit', __name__)
 
 @common_roles_edit.route(PAGE_URL, methods=['GET', 'POST'])
 def roles_edit():
+    logger = logging.getLogger("TMI.roles_edit")
 
     def pop_session():
         session.pop("roles_initial", None)
@@ -33,8 +33,14 @@ def roles_edit():
 
     # TODO: This needs to be a decorator
     if not session.get('user_id', False): return redirect(COMMON_URL_LOGIN)
+    user = User.get_by_id(session['user_id'])
+    if user is None or not RolesUsers.user_has_role(user, ["EDIT-ROLE", "ADD-USER"]):
+        # this should never happen... logout if it does...
+        logger.error("Unable to find user id {}".format(session['user_id']))
+        session.pop('user_id', None)
+        redirect(COMMON_URL_INDEX)
 
-    w = WrapBokeh(PAGE_URL, app.logger)
+    w = WrapBokeh(PAGE_URL, logger)
 
     w.add("sel_uname", Select(options=[], value=None, title="Select User", css_classes=['sel_uname']))
     w.add("cbg_roles", CheckboxGroup(labels=[], active=[], css_classes=['cbg_roles']))
@@ -45,7 +51,7 @@ def roles_edit():
 
     user = User.get_by_id(session['user_id'])
     if user is None:
-        app.logger.error("Unable to find user id {}".format(session['user_id']))
+        logger.error("Unable to find user id {}".format(session['user_id']))
         session.pop('user_id')
         redirect(COMMON_URL_INDEX)
 
@@ -56,19 +62,12 @@ def roles_edit():
 
     args, _redirect_page_metrics = w.process_req(request)
     if not args: return _redirect_page_metrics
-    app.logger.info("{} : args {}".format(PAGE_URL, args))
+    logger.info("{} : args {}".format(PAGE_URL, args))
 
     redir, url = toolbar_menu_redirect(args)
     if redir:
         pop_session()
         return redirect(url)
-
-    # if the user is not a role editor or admin, then bail
-    if not RolesUsers.user_has_role(user, ["ADMIN", "EDIT-ROLE"]):
-        app.logger.info("{} (id={}) does not have roles edit privileges".format(user.username, user.id))
-        doc_layout = layout(sizing_mode='scale_width')
-        doc_layout.children.append(Div(text="""<h1>You do not have access rights for this operation.</h1>"""))
-        return w.render(doc_layout)
 
     if args.get("b_cancel", False):
         pop_session()
@@ -84,7 +83,7 @@ def roles_edit():
             selected_roles.append(session["roles"][idx])
 
         edit_user = User.get_username(w.get("sel_uname").value)
-        app.logger.info("{} updated roles {}".format(edit_user.username, selected_roles))
+        logger.info("{} updated roles {}".format(edit_user.username, selected_roles))
         success = User.update_roles(edit_user, selected_roles)
         if success: updated = True
 
