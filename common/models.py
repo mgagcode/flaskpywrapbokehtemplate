@@ -316,7 +316,7 @@ class User(Base):
         except:
             user = None
         session.close()
-        logger.info(user, enabled)
+        logger.info("{} {}".format(user.username, enabled))
         if enabled: return user
         return None
 
@@ -365,7 +365,6 @@ def q_users_last_active():
     users = session.query(User).all()
     session.close()
     return users
-
 
 
 def parse_args():

@@ -8,7 +8,6 @@ Example using WrapBokeh
 from bokeh.layouts import row, layout, Spacer, widgetbox
 from bokeh.models.widgets.inputs import TextInput, PasswordInput
 from bokeh.models.widgets.buttons import Button
-from bokeh.models.widgets import Div
 
 from flask import redirect, abort, Blueprint, session
 from flask import request

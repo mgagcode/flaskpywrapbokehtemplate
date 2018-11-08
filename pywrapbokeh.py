@@ -247,7 +247,7 @@ class WrapBokeh(object):
             if not all and self.widgets[key]["init_done"]: continue
             self.widgets[key]["init_done"] = True
 
-            if self.widgets[key]["obj"] is not None and self.widgets[key]["pywrap_trigger"]:
+            if self.widgets[key]["obj"] is not None and self.widgets[key]["refresh_cb"]:
 
                 if isinstance(self.widgets[key]["obj"], AjaxDataSource):
                     # AjaxDataSource, and probably ColumnDataSource, get a different
@@ -412,7 +412,7 @@ class WrapBokeh(object):
         self.widgets[name]["value"] = value
         return args
 
-    def add(self, name, widget, other=None):
+    def add(self, name, widget, other=None, refresh_cb=True):
         """ Add a bokeh widget
         API
           WrapBokeh.add( <name_of_widget>, <bokeh API>(..., [css_classes=['sel_fruit']]))
@@ -430,7 +430,6 @@ class WrapBokeh(object):
             return False
 
         pywrap_update_value = True
-        pywrap_trigger = True
 
         if isinstance(widget, (Slider, )):
             value_field = 'value'
@@ -458,12 +457,11 @@ class WrapBokeh(object):
             value_field = None
             setter = self._set_button
             value = None
-            pywrap_update_value = True
         elif isinstance(widget, (FileInput, )):
             value_field = None
             setter = self._set_fileinput
             value = None
-            pywrap_trigger = False
+            refresh_cb = False
         elif isinstance(widget, (Toggle, )):
             value_field = "active"
             setter = self._set_toggle
@@ -488,8 +486,7 @@ class WrapBokeh(object):
             value_field = 'value'
             setter = self._set_textinput
             value = widget.value
-            pywrap_update_value = True
-            pywrap_trigger = False
+            refresh_cb = False
         elif isinstance(widget, (AjaxDataSource, )):
             if other is None:
                 #self.logger.info("{} AjaxDataSource will return idx of user selected row".format(name))
@@ -511,8 +508,7 @@ class WrapBokeh(object):
             'value_cache': None,  # used only for textinput
             'setter': setter,
             # internal stuff
-            'pywrap_trigger': pywrap_trigger, # won't cause a JS trigger
-                                              # needed for TextInput() items
+            'refresh_cb': refresh_cb,    # True/False for the refresh callback to be installed
             'pywrap_update_value': pywrap_update_value,
             'init_done': False,
         }
@@ -701,5 +697,10 @@ class WrapBokeh(object):
             with self.dom_doc.body:
                 style(raw(_css))
 
-    def dom_doc(self):
+    def dom_document(self):
         return self.dom_doc
+
+    def add_js(self, js):
+        with self.dom_doc.body:
+            script(raw(js))
+
