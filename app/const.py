@@ -31,3 +31,9 @@ class GUI(Const):
     BUTTON_ENABLED_GREEN = "#98FB98"
     BUTTON_DISABLED_GRAY = "#A9A9A9"
     BUTTON_CANCEL = "#CD5C5C"
+
+    # toolbar and menu layout
+    TITLEBAR_LOGIN_BTN_WIDTH = 50
+    TITLEBAR_MENU_WIDTH      = 150
+    TITLEBAR_TITLE_WIDTH     = 550
+    TITLEBAR_SPACER          = 20

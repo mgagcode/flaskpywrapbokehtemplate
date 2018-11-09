@@ -13,7 +13,7 @@ def start():
     #app.register_blueprint(url_your_view)
 
     app.config["app"] = {
-        "title": "TMITester",
+        "title": "TMI Demo Framework",
 
         "user": {
             "roles": {

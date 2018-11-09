@@ -18,6 +18,9 @@ from pywrapbokeh import WrapBokeh
 from app.css import url_page_css, page_toolbar_menu, toolbar_menu_redirect
 from app.urls import *
 
+import logging
+logger = logging.getLogger("TMI.account")
+
 from common.models import User, RolesUsers
 
 PAGE_URL = COMMON_URL_ACCOUNT
@@ -27,17 +30,16 @@ common_account_edit = Blueprint('common_account_edit', __name__)
 
 @common_account_edit.route(PAGE_URL, methods=['GET', 'POST'])
 def account_edit():
-
     # TODO: This needs to be a decorator
     if not session.get('user_id', False): return redirect(COMMON_URL_LOGIN)
     user = User.get_by_id(session['user_id'])
     if user is None or not RolesUsers.user_has_role(user, ["ACCOUNT"]):
         # this should never happen... logout if it does...
-        app.logger.error("Unable to find user id {}".format(session['user_id']))
+        logger.error("Unable to find user id {}".format(session['user_id']))
         session.pop('user_id', None)
         redirect(COMMON_URL_INDEX)
 
-    w = WrapBokeh(PAGE_URL, app.logger)
+    w = WrapBokeh(PAGE_URL, logger)
 
     w.add("tin_fname", TextInput(title="First Name:", placeholder="", css_classes=['tin_fname']))
     w.add("tin_lname", TextInput(title="Last Name:", placeholder="", css_classes=['tin_lname']))
@@ -52,7 +54,7 @@ def account_edit():
 
     user = User.get_by_id(session['user_id'])
     if user is None:
-        app.logger.error("Unable to find user id {}".format(session['user_id']))
+        logger.error("Unable to find user id {}".format(session['user_id']))
         session.pop('user_id')
         w.get("tin_uname").placeholder = ""
         redirect(COMMON_URL_INDEX)
@@ -75,7 +77,7 @@ def account_edit():
 
     args, _redirect_page_metrics = w.process_req(request)
     if not args: return _redirect_page_metrics
-    app.logger.info("{} : args {}".format(PAGE_URL, args))
+    logger.info("{} : args {}".format(PAGE_URL, args))
 
     redir, url = toolbar_menu_redirect(args)
     if redir:
@@ -93,7 +95,7 @@ def account_edit():
 
     # on submit, validate form contents, show errors...
     if submitted and validated:
-        app.logger.info("validated: {}".format(args))
+        logger.info("validated: {}".format(args))
         User.update(original_username=session["original_username"],
                     first=args["tin_fname"],
                     last=args["tin_lname"],

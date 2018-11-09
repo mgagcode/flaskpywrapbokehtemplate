@@ -1,14 +1,15 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import logging
+logger = logging.getLogger("TMI.login_recover")
+
 from bokeh.layouts import row, layout, Spacer, widgetbox
-from bokeh.models.widgets.inputs import TextInput, PasswordInput
+from bokeh.models.widgets.inputs import TextInput
 from bokeh.models.widgets.buttons import Button
 from bokeh.models.widgets import Div
 
-from flask import redirect, abort, Blueprint
+from flask import redirect, Blueprint
 from flask import request
-from flask import current_app as app
 
 from pywrapbokeh import WrapBokeh
 
@@ -24,7 +25,6 @@ common_login_recover = Blueprint('common_login_recover', __name__)
 
 @common_login_recover.route(PAGE_URL, methods=['GET', 'POST'])
 def login_recover():
-    logger = logging.getLogger("TMI.login_recover")
 
     w = WrapBokeh(PAGE_URL, logger)
 

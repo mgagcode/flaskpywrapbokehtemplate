@@ -6,6 +6,8 @@ Example using WrapBokeh
 
 """
 import logging
+logger = logging.getLogger("TMI.index")
+
 from bokeh.layouts import layout
 from bokeh.models.widgets import Div
 
@@ -25,7 +27,6 @@ common_index = Blueprint('common_index', __name__)
 
 @common_index.route(PAGE_URL, methods=['GET', 'POST'])
 def index():
-    logger = logging.getLogger("TMI.index")
 
     session.clear()
 

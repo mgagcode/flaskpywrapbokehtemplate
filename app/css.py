@@ -7,18 +7,13 @@ from dominate.tags import *
 from dominate.util import raw
 from urllib.parse import urlparse
 
-from app.urls import *
 from bokeh.layouts import row, Spacer
 from bokeh.models.widgets.buttons import Dropdown, Button
 from bokeh.models.widgets import Div
 
+from app.urls import *
+from app.const import GUI
 from common.models import RolesUsers
-
-
-TITLEBAR_LOGIN_BTN_WIDTH = 50
-TITLEBAR_MENU_WIDTH      = 150
-TITLEBAR_TITLE_WIDTH     = 350
-TITLEBAR_SPACER          = 20
 
 
 def url_page_css(dom_doc, url):
@@ -63,14 +58,14 @@ def page_toolbar_menu(w, doc_layout, args, user, buttons=[]):
 
     _new_menu = [x["entry"] for x in _new_menu]
 
-    w.add("toolbar_menu", Dropdown(label=user.username, menu=_new_menu, width=TITLEBAR_MENU_WIDTH, css_classes=['toolbar_menu']))
+    w.add("toolbar_menu", Dropdown(label=user.username, menu=_new_menu, width=GUI.TITLEBAR_MENU_WIDTH, css_classes=['toolbar_menu']))
     w.init()
 
     title = app.config["app"]["title"]
-    _tool_bar_row = [Div(text="""<h1>{} - {}</h1>""".format(title, sub_title), width=TITLEBAR_TITLE_WIDTH)]
+    _tool_bar_row = [Div(text="""<h1>{} - {}</h1>""".format(title, sub_title), width=GUI.TITLEBAR_TITLE_WIDTH)]
     _tool_bar_row.append(w.get("toolbar_menu"))
     for button in buttons:
-        _tool_bar_row.append(Spacer(width=TITLEBAR_SPACER))
+        _tool_bar_row.append(Spacer(width=GUI.TITLEBAR_SPACER))
         _tool_bar_row.append(button)
     doc_layout.children.append(row(_tool_bar_row))
 
@@ -78,11 +73,11 @@ def page_toolbar_menu(w, doc_layout, args, user, buttons=[]):
 
 
 def index_toolbar_menu(w, doc_layout, args):
-    w.add("b_login", Button(label="LOGIN", width=TITLEBAR_LOGIN_BTN_WIDTH, css_classes=['b_submit']))
+    w.add("b_login", Button(label="LOGIN", width=GUI.TITLEBAR_LOGIN_BTN_WIDTH, css_classes=['b_submit']))
 
     title = app.config["app"]["title"]
-    doc_layout.children.append(row(Div(text="""<h1>{}</h1>""".format(title), width=TITLEBAR_TITLE_WIDTH),
-                                   Spacer(width=TITLEBAR_SPACER),
+    doc_layout.children.append(row(Div(text="""<h1>{}</h1>""".format(title), width=GUI.TITLEBAR_TITLE_WIDTH),
+                                   Spacer(width=GUI.TITLEBAR_SPACER),
                                    w.get("b_login"), sizing_mode="fixed"))
 
     w.add_css("b_login", {'button': {'background-color': '#98FB98', 'min-width': '50px'}})

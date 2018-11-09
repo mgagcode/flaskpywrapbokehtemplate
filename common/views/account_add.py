@@ -8,11 +8,13 @@ Example using WrapBokeh
 from bokeh.layouts import row, layout, Spacer, widgetbox
 from bokeh.models.widgets.inputs import TextInput, PasswordInput
 from bokeh.models.widgets.buttons import Button
-from bokeh.models.widgets import Div
 
 from flask import redirect, Blueprint, session
 from flask import request
 from flask import current_app as app
+
+import logging
+logger = logging.getLogger("TMI.account_add")
 
 from pywrapbokeh import WrapBokeh
 
@@ -32,11 +34,11 @@ def common__account_add():
     user = User.get_by_id(session['user_id'])
     if user is None or not RolesUsers.user_has_role(user, ["ADMIN", "ADD-USER"]):
         # this should never happen... logout if it does...
-        app.logger.error("Unable to find user id {}".format(session['user_id']))
+        logger.error("Unable to find user id {}".format(session['user_id']))
         session.pop('user_id', None)
         redirect(COMMON_URL_INDEX)
 
-    w = WrapBokeh(PAGE_URL, app.logger)
+    w = WrapBokeh(PAGE_URL, logger)
 
     w.add("tin_fname", TextInput(title="First Name:", placeholder="", css_classes=['tin_fname']))
     w.add("tin_lname", TextInput(title="Last Name:", placeholder="", css_classes=['tin_lname']))
@@ -55,7 +57,7 @@ def common__account_add():
 
     args, _redirect_page_metrics = w.process_req(request)
     if not args: return _redirect_page_metrics
-    app.logger.info("{} : args {}".format(PAGE_URL, args))
+    logger.info("{} : args {}".format(PAGE_URL, args))
 
     redir, url = toolbar_menu_redirect(args)
     if redir: return redirect(url)
@@ -67,7 +69,7 @@ def common__account_add():
 
     # on submit, validate form contents, show errors...
     if submitted and validated:
-        app.logger.info("validated: {}".format(args))
+        logger.info("validated: {}".format(args))
         User.add(first=args["tin_fname"],
                  last=args["tin_lname"],
                  username=args["tin_uname"],

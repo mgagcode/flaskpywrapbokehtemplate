@@ -5,14 +5,15 @@
 Example using WrapBokeh
 
 """
-from bokeh.layouts import row, layout, Spacer, widgetbox
-from bokeh.models.widgets.inputs import TextInput, PasswordInput
-from bokeh.models.widgets.buttons import Button, Dropdown
+from bokeh.layouts import layout
 from bokeh.models.widgets import Div
 
 from flask import redirect, abort, Blueprint, session
 from flask import request
 from flask import current_app as app
+
+import logging
+logger = logging.getLogger("TMI.land")
 
 from pywrapbokeh import WrapBokeh
 

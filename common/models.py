@@ -356,7 +356,7 @@ class User(Base):
         except:
             user = None
         session.close()
-        logger.info(user)
+        logger.debug("{} -> {}".format(id, user.username))
         return user
 
 

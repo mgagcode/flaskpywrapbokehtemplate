@@ -6,6 +6,8 @@ Example using WrapBokeh
 
 """
 import logging
+logger = logging.getLogger("TMI.login")
+
 from bokeh.layouts import row, layout, Spacer, widgetbox, column
 from bokeh.models.widgets.inputs import TextInput, PasswordInput
 from bokeh.models.widgets.buttons import Button
@@ -27,7 +29,6 @@ PAGE_URL = COMMON_URL_LOGIN
 common_login = Blueprint('common_login', __name__)
 @common_login.route(PAGE_URL, methods=['GET', 'POST'])
 def login():
-    logger = logging.getLogger("TMI.login")
 
     w = WrapBokeh(PAGE_URL, logger)
 
