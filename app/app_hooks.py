@@ -43,3 +43,13 @@ def start():
 
     # init any other app stuff here
     logger.info("app start done")
+
+
+def login(user_id):
+    # called when user logs in
+    pass
+
+
+def logout():
+    # called when user logs out
+    pass

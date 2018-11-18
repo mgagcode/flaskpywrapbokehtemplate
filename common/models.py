@@ -281,11 +281,11 @@ class User(Base):
         logger.info("User {} updated".format(username))
         return True
 
-    def update_roles(user, roles):
+    def update_roles(username, roles):
         session = Session()
 
         try:
-            user_update = session.query(User).filter(User.username == user.username).one()
+            user_update = session.query(User).filter(User.username == username).one()
         except Exception as e:
             logger.error(e)
             user_update = None
@@ -303,7 +303,7 @@ class User(Base):
 
         session.commit()
         session.close()
-        logger.info("User {} updated".format(user.username))
+        logger.info("User {} updated".format(username))
         return True
 
     def login(username, password):
@@ -321,6 +321,11 @@ class User(Base):
         return None
 
     def get_username(username, all=False):
+        """ get users by username, or get all users
+        :param username: string, or list of strings
+        :param all: if set, all the users are returned
+        :return: list of users found
+        """
         session = Session()
         users = []
         logger.info("get_username: {}".format(username))

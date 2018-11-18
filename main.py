@@ -34,13 +34,8 @@ with app.app_context():
     from app.land import app_land
     app.register_blueprint(app_land)
 
-    import app.start as application
-    application.start()
-
-    # Create your own App
-    # 1. backup/copy the 'app' directory to something else, ex '__app'
-    # 2. 'app' is now YOUR APP, modify as required
-    # 3. Add your views, and add those blueprints to app:start.py
+    from app.app_hooks import start
+    start()
 
 
 if __name__ == '__main__':

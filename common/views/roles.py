@@ -84,7 +84,7 @@ def roles_edit():
 
         edit_user = User.get_username(w.get("sel_uname").value)
         logger.info("{} updated roles {}".format(edit_user.username, selected_roles))
-        success = User.update_roles(edit_user, selected_roles)
+        success = User.update_roles(edit_user.username, selected_roles)
         if success: updated = True
 
     doc_layout = layout(sizing_mode="fixed")

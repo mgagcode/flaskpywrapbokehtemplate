@@ -13,11 +13,19 @@ from bokeh.models.widgets import Div
 
 from app.urls import *
 from app.const import GUI
+from app.app_hooks import logout
 from common.models import RolesUsers
 
 
 def url_page_css(dom_doc, url):
+    """ Add css to the page
+    :param dom_doc:
+    :param url: url of the current page
+    """
     bkgnd_url = url_for('static', filename='media/sharon-mccutcheon-576867-unsplash.jpg', _external=False)
+
+    # based on url, you can specify different css for that page...
+    # if (usrl == <>):
 
     with dom_doc.body:
         style(raw("""body {{background: #ffffff url("{}") no-repeat left top;)}}""".format(bkgnd_url)))
@@ -105,6 +113,7 @@ def toolbar_menu_redirect(args):
         if entry["entry"] is None: continue
         if toolbar_menu == entry["entry"][0]:
             app.logger.info("toolbar {} -> {}".format(toolbar_menu, entry["url"]))
+            if COMMON_URL_INDEX == entry["url"]: logout()
             return True, entry["url"]
 
     app.logger.warning("{} not handled".format(args.get("toolbar_menu")))

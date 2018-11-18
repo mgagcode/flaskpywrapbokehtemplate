@@ -21,6 +21,7 @@ from pywrapbokeh import WrapBokeh
 
 from app.css import url_page_css, index_toolbar_menu, index_menu_redirect
 from app.urls import *
+from app.app_hooks import login
 
 from common.models import User
 
@@ -28,7 +29,7 @@ PAGE_URL = COMMON_URL_LOGIN
 
 common_login = Blueprint('common_login', __name__)
 @common_login.route(PAGE_URL, methods=['GET', 'POST'])
-def login():
+def common__login():
 
     w = WrapBokeh(PAGE_URL, logger)
 
@@ -66,6 +67,7 @@ def login():
             if user is not None:
                 logger.info("{} {}".format(user.username, user.id))
                 session['user_id'] = user.id
+                login(user.id)
                 return redirect(COMMON_URL_LAND)
             else:
                 logger.info("Login failed for {}".format(uname))
