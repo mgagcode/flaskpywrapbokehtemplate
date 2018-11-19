@@ -39,6 +39,7 @@ _page_toolbar_menu = [
     {"entry": ("Account", 'Account'), "url": COMMON_URL_ACCOUNT, "title": "Edit Account", "role": ["ACCOUNT"]},
     {"entry": ("Roles", "Roles"), "url": COMMON_URL_ROLES, "title": "Edit Roles", "role": ["EDIT-ROLE", "ADD-USER"]},
     {"entry": ("Add Users", "Add Users"), "url": COMMON_URL_ACCOUNT_ADD, "title": "Add Users", "role": ["ADD-USER"]},
+    {"entry": ("Show Users", "Show Users"), "url": COMMON_URL_ACCOUNT_SHOW, "title": "Show Users", "role": ["ACCOUNT"]},
     {"entry": None, "url": None, "title": None},  # line divider
     {"entry": ("Logout", 'Logout'), "url": COMMON_URL_INDEX, "title": "Logout"},
 ]

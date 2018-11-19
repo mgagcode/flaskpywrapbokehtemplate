@@ -23,6 +23,8 @@ with app.app_context():
     from common.views.login_recover import common_login_recover
     from common.views.account import common_account_edit
     from common.views.roles import common_roles_edit
+    from common.views.account_add import common_account_add
+    from common.views.account_show import common_account_show
 
     app.register_blueprint(common_index)
     app.register_blueprint(common_login)
@@ -30,6 +32,8 @@ with app.app_context():
     app.register_blueprint(common_account_edit)
     app.register_blueprint(common_roles_edit)
     app.register_blueprint(common_login_recover)
+    app.register_blueprint(common_account_add)
+    app.register_blueprint(common_account_show)
 
     from app.land import app_land
     app.register_blueprint(app_land)

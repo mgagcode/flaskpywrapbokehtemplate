@@ -71,7 +71,7 @@ class Role(Base):
 class User(Base):
     __tablename__ = 'user'
     id = Column(Integer, primary_key=True)
-    email = Column(String(255), unique=True)
+    email = Column(String(255))
     fname = Column(String(64))
     lname = Column(String(64))
     username = Column(String(64), unique=True)
@@ -167,10 +167,6 @@ class User(Base):
                 {'err': ["min length", "value does not match regex"],
                  "msg": "Email is invalid, please enter a valid email.",
                  "css": {'input': {'background-color': '#F08080'}},
-                 },
-                {'err': ["duplicate"],
-                 "msg": "Email already exist, please pick a new email.",
-                 "css": {'input': {'background-color': '#F08080'}},
                  }
             ]
         },
@@ -253,8 +249,14 @@ class User(Base):
                     email=email,
                     current_login_at=datetime.datetime.now())
         session.add(user)
-        session.commit()
+        try:
+            session.commit()
+        except Exception as e:
+            logger.error(e)
+            return False
         session.close()
+        logger.info("User {} added".format(username))
+        return True
 
     def update(original_username, first, last, username, password, email):
         session = Session()
@@ -297,7 +299,13 @@ class User(Base):
         logger.info(roles)
         new_roles = []
         for role in roles:
-            new_roles.append(session.query(Role).filter(Role.name == role).one())
+            # check to see if the role is in this db, if not, just skip it, its not
+            # important to us
+            r = session.query(Role).filter(Role.name == role).scalar()
+            if r:
+                new_roles.append(session.query(Role).filter(Role.name == role).one())
+            else:
+                logger.warning("Skipping unknown role: {}".format(role))
 
         user_update.roles = new_roles
 
@@ -349,6 +357,15 @@ class User(Base):
         session = Session()
         try:
             user = session.query(User).filter(User.email == email).one()
+        except:
+            user = None
+        session.close()
+        return user != None
+
+    def exist_username(username):
+        session = Session()
+        try:
+            user = session.query(User).filter(User.username == username).one()
         except:
             user = None
         session.close()
