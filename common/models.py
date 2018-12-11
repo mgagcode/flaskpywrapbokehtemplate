@@ -3,7 +3,7 @@
 import argparse
 from common.database import Base, Session
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy import Boolean, DateTime, Column, Integer, String, ForeignKey
+from sqlalchemy import Boolean, DateTime, Column, Integer, String, ForeignKey, and_
 
 from flask import current_app as app
 
@@ -318,14 +318,19 @@ class User(Base):
         session = Session()
         enabled = False
         try:
-            user = session.query(User).filter(User.username == username and
-                                              User.password == password).one()
+            user = session.query(User).filter(and_(User.username == username,
+                                                   User.password == password)).one()
             enabled = RolesUsers.user_enabled(user)
-        except:
+        except Exception as e:
+            logger.error(e)
             user = None
-        session.close()
-        logger.info("{} {}".format(user.username, enabled))
-        if enabled: return user
+
+        finally:
+            session.close()
+
+        if enabled:
+            logger.info("{} {}".format(user.username, enabled))
+            return user
         return None
 
     def get_username(username, all=False):
