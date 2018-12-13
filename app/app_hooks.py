@@ -46,10 +46,15 @@ def start():
 
 
 def login(user_id):
-    # called when user logs in
+    """ Gets called when user successfully logs in
+    :param user_id:
+    :return:
+    """
     pass
 
 
 def logout():
-    # called when user logs out
+    """ Gets called when user logs out
+    :return:
+    """
     pass
