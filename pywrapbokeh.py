@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# cython: language_level=3
 
 """
 pywrapbokeh, Copyright (c) 2018, Martin Guthrie, All Rights Reserved
@@ -9,17 +10,15 @@ License: MIT License
 
 from datetime import datetime, timedelta
 from bokeh.embed import components
-from bokeh.layouts import layout
 from bokeh.models.callbacks import CustomJS
 from bokeh.models import Slider, RangeSlider, AjaxDataSource
 from bokeh.models.widgets.sliders import DateSlider
-from bokeh.models.widgets.inputs import DatePicker, MultiSelect, TextInput, Select
+from bokeh.models.widgets.inputs import DatePicker, MultiSelect, TextInput, Select, PasswordInput
 from bokeh.models.widgets.buttons import Button, Toggle, Dropdown
 from bokeh.models.widgets import CheckboxButtonGroup, CheckboxGroup, RadioButtonGroup, RadioGroup
 from bokeh.models.widgets import Div
 from bokeh.models import LayoutDOM
 from bokeh.core.properties import String
-from bokeh.embed.util import OutputDocumentFor
 
 from dominate.tags import *
 import dominate
@@ -139,7 +138,7 @@ class WrapBokeh(object):
 
         return "{}".format(d)
 
-    def dominate_document(self, title="pywrapBokeh", bokeh_version='1.0.0rc3'):
+    def dominate_document(self, title="pywrapBokeh", bokeh_version='1.0.1', local=True):
         """ Create dominate document, see https://github.com/Knio/dominate
 
         Populates the required bokeh/jquery links
@@ -153,20 +152,30 @@ class WrapBokeh(object):
         """
         d = dominate.document(title=title)
         with d.head:
-            link(href="https://cdn.pydata.org/bokeh/dev/bokeh-{bokeh_version}.min.css".format(bokeh_version=bokeh_version),
-                 rel="stylesheet",
-                 type="text/css")
-            script(src="https://cdn.pydata.org/bokeh/dev/bokeh-{bokeh_version}.min.js".format(bokeh_version=bokeh_version))
-            link(href="https://cdn.pydata.org/bokeh/dev/bokeh-widgets-{bokeh_version}.min.css".format(bokeh_version=bokeh_version),
-                 rel="stylesheet",
-                 type="text/css")
-            script(src="https://cdn.pydata.org/bokeh/dev/bokeh-widgets-{bokeh_version}.min.js".format(bokeh_version=bokeh_version))
-            link(href="https://cdn.pydata.org/bokeh/dev/bokeh-tables-{bokeh_version}.min.css".format(bokeh_version=bokeh_version),
-                 rel="stylesheet",
-                 type="text/css")
-            script(src="https://cdn.pydata.org/bokeh/dev/bokeh-tables-{bokeh_version}.min.js".format(bokeh_version=bokeh_version))
+            if local:
+                link(href="/pywrapstatic/bokeh-{bokeh_version}.min.css".format(bokeh_version=bokeh_version), rel="stylesheet", type="text/css")
+                script(src="/pywrapstatic/bokeh-{bokeh_version}.min.js".format(bokeh_version=bokeh_version))
+                link(href="/pywrapstatic/bokeh-widgets-{bokeh_version}.min.css".format(bokeh_version=bokeh_version), rel="stylesheet", type="text/css")
+                script(src="/pywrapstatic/bokeh-widgets-{bokeh_version}.min.js".format(bokeh_version=bokeh_version))
+                link(href="/pywrapstatic/bokeh-tables-{bokeh_version}.min.css".format(bokeh_version=bokeh_version), rel="stylesheet", type="text/css")
+                script(src="/pywrapstatic/bokeh-tables-{bokeh_version}.min.js".format(bokeh_version=bokeh_version))
 
-            script(src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js")
+                script(src="/pywrapstatic/jquery.min.js")
+            else:
+                link(href="https://cdn.pydata.org/bokeh/release/bokeh-{bokeh_version}.min.css".format(bokeh_version=bokeh_version),
+                     rel="stylesheet",
+                     type="text/css")
+                script(src="https://cdn.pydata.org/bokeh/release/bokeh-{bokeh_version}.min.js".format(bokeh_version=bokeh_version))
+                link(href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-{bokeh_version}.min.css".format(bokeh_version=bokeh_version),
+                     rel="stylesheet",
+                     type="text/css")
+                script(src="https://cdn.pydata.org/bokeh/release/bokeh-widgets-{bokeh_version}.min.js".format(bokeh_version=bokeh_version))
+                link(href="https://cdn.pydata.org/bokeh/release/bokeh-tables-{bokeh_version}.min.css".format(bokeh_version=bokeh_version),
+                     rel="stylesheet",
+                     type="text/css")
+                script(src="https://cdn.pydata.org/bokeh/release/bokeh-tables-{bokeh_version}.min.js".format(bokeh_version=bokeh_version))
+
+                script(src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js")
 
             meta(charset="UTF-8")
 
@@ -408,6 +417,15 @@ class WrapBokeh(object):
         ti.value = value
         return args
 
+    def _set_password(self, ti, name, value, args):
+        if value == None: value = ti.placeholder
+        self.widgets[name]["value"] = value
+        self.widgets[name]["value_cache"] = value
+        ti.value = value
+        # hide plaintext password from args, client must access the widget
+        args[name] = None
+        return args
+
     def _set_ajaxdatasource(self, ads, name, value, args):
         self.widgets[name]["value"] = value
         return args
@@ -482,6 +500,11 @@ class WrapBokeh(object):
             value_field = 'active'
             setter = self._set_rbg
             value = widget.active
+        elif isinstance(widget, (PasswordInput, )):
+            value_field = 'value'
+            setter = self._set_password
+            value = widget.value
+            refresh_cb = False
         elif isinstance(widget, (TextInput, )):
             value_field = 'value'
             setter = self._set_textinput
@@ -506,6 +529,7 @@ class WrapBokeh(object):
             'value': value,
             'value_field': value_field,
             'value_cache': None,  # used only for textinput
+            'value_alt': None,    # an alternate cache for a value
             'setter': setter,
             # internal stuff
             'refresh_cb': refresh_cb,    # True/False for the refresh callback to be installed
@@ -559,6 +583,10 @@ class WrapBokeh(object):
                         # is set to True.  the next caller widget can be any other widget,
                         # and that button (all buttons, need to be set back to False
                         args = widget["setter"](widget["obj"], key, False, args)
+
+                    elif isinstance(widget["obj"], (PasswordInput, )):
+                        # need to obviscate the password
+                        args = widget["setter"](widget["obj"], key, w_value, args)
 
                     else:
                         w_value = args.get(key, None)

@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+#  cython: language_level=3
 import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -30,6 +31,7 @@ def init_db():
             r = models.Role(name=role, description=desc)
             s.add(r)
             s.commit()
+    s.close()
 
     # add default users if not present
     for user in app.config["app"]["user"]["users"]:
@@ -39,11 +41,9 @@ def init_db():
             roles = []
             for role in user["roles"]:
                 roles.append(s.query(models.Role).filter(models.Role.name == role).one())
-            a = models.User(username=user["username"],
-                            password=user["password"],
-                            email=user["email"],
-                            roles=roles)
-            s.add(a)
-            s.commit()
+                # first, last, username, password, email
+            models.User.add(first="", last="", username=user["username"], password=user["password"], email=user["email"])
+            models.User.update_roles(models.User.get_username(user["username"]), user["roles"])
 
-    s.close()
+        logger.warning("CHANGE PASSWORD FOR USER: {}".format(user["username"]))
+

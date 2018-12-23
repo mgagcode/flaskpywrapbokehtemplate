@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# cython: language_level=3
 
 """
 Example using WrapBokeh
@@ -43,7 +44,7 @@ def common__login():
 
     # Create a dominate document, see https://github.com/Knio/dominate
     # this line should go after any "return redirect" statements
-    w.dominate_document()
+    w.dominate_document(title=session["title"])
     url_page_css(w.dom_doc, PAGE_URL)
 
     args, _redirect_page_metrics = w.process_req(request)
@@ -60,7 +61,7 @@ def common__login():
     login_failed = False
     if args.get("b_submit", False):
         uname = args.get("tin_uname", None)
-        pw = args.get("tin_lpw", None)
+        pw = w.get("tin_lpw").value
 
         if uname is not None and pw is not None:
             user = User.login(uname, pw)
@@ -75,8 +76,6 @@ def common__login():
 
     doc_layout = layout(sizing_mode='scale_width')
     index_toolbar_menu(w, doc_layout, args)
-
-    doc_layout = layout(sizing_mode='scale_width')
 
     if login_failed:
         doc_layout.children.append(row(Spacer(width=left_margin), column([Div(text="""<p>Login failed, Recover Password?</p>"""),

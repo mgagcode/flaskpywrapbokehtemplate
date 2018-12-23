@@ -1,11 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# cython: language_level=3
 import argparse
+import bcrypt
 from common.database import Base, Session
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import Boolean, DateTime, Column, Integer, String, ForeignKey, and_
-
-from flask import current_app as app
 
 import datetime
 from cerberus import Validator
@@ -81,6 +81,7 @@ class User(Base):
     login_count = Column(Integer)
     active = Column(Boolean())
     confirmed_at = Column(DateTime())
+    value = Column(String(64))  # this is encryption of roles, to detect hacks
     roles = relationship('Role', secondary='roles_users', lazy='joined', backref=backref('users', lazy='joined'))
 
     # https://nicolaiarocci.com/validating-user-objects-cerberus/
@@ -180,6 +181,15 @@ class User(Base):
         }
     }
 
+    def get_hashed_password(plain_text_password):
+        # Hash a password for the first time
+        #   (Using bcrypt, the salt is saved into the hash itself)
+        return bcrypt.hashpw(plain_text_password, bcrypt.gensalt())
+
+    def check_password(plain_text_password, hashed_password):
+        # Check hashed password. Using bcrypt, the salt is saved into the hash itself
+        return bcrypt.checkpw(plain_text_password, hashed_password)
+
     def get_form_error_handle_from_err(key, err):
         if not User().schema_error.get(key, False):
             logger.error("{} not found in schema_error".format(key))
@@ -245,7 +255,7 @@ class User(Base):
         user = User(fname=first,
                     lname=last,
                     username=username,
-                    password=password,
+                    password=User.get_hashed_password(password),
                     email=email,
                     current_login_at=datetime.datetime.now())
         session.add(user)
@@ -275,7 +285,7 @@ class User(Base):
         user_update.fname =first
         user_update.lname = last
         user_update.username = username
-        user_update.password = password
+        user_update.password = User.get_hashed_password(password)
         user_update.email = email
 
         session.commit()
@@ -283,11 +293,15 @@ class User(Base):
         logger.info("User {} updated".format(username))
         return True
 
-    def update_roles(username, roles):
+    def update_roles(user, roles):
+        """
+        :param roles: names of roles
+        :return:
+        """
         session = Session()
 
         try:
-            user_update = session.query(User).filter(User.username == username).one()
+            user_update = session.query(User).filter(User.username == user.username).one()
         except Exception as e:
             logger.error(e)
             user_update = None
@@ -307,31 +321,62 @@ class User(Base):
             else:
                 logger.warning("Skipping unknown role: {}".format(role))
 
+
+        def sorter(e): return e.id
+
+        new_roles.sort(key=sorter)
+
         user_update.roles = new_roles
+        session.commit()
+        logger.info("User {} updated".format(User.username))
+
+        # make a hash of the sorted roles to detect db hacking
+        r = ""
+        for role in new_roles: r += role.name
+
+        user_update.value = User.get_hashed_password(r)
 
         session.commit()
         session.close()
-        logger.info("User {} updated".format(username))
         return True
 
     def login(username, password):
         session = Session()
         enabled = False
         try:
-            user = session.query(User).filter(and_(User.username == username,
-                                                   User.password == password)).one()
-            enabled = RolesUsers.user_enabled(user)
+            user = session.query(User).filter(User.username == username).one()
+            if User.check_password(password, user.password):
+                enabled = RolesUsers.user_enabled(user)
+            else:
+                logger.error("{} Failed password check".format(User.username))
         except Exception as e:
             logger.error(e)
-            user = None
+            return None
 
         finally:
             session.close()
 
+        # check if database was hacked...
+        roles = user.roles
+
+        def sorter(e): return e.id
+
+        roles.sort(key=sorter)
+
+        r = ""
+        for role in roles: r += role.name
+        hacked = not User.check_password(r, user.value)
+
+        if hacked:
+            logger.error("DB Hacked detected".format(User.username))
+            return None
+
         if enabled:
             logger.info("{} {}".format(user.username, enabled))
             return user
-        return None
+        else:
+            logger.error("{} is not enabled".format(User.username))
+            return None
 
     def get_username(username, all=False):
         """ get users by username, or get all users
@@ -385,6 +430,27 @@ class User(Base):
         session.close()
         logger.debug("{} -> {}".format(id, user.username))
         return user
+
+    def get_all_users_by_role(role_name):
+        session = Session()
+        try:
+            users = session.query(User).filter(User.roles.any(Role.name == role_name)).all()
+        except Exception as e:
+            logger.error(e)
+            users = []
+        session.close()
+        user_list = []
+        for user in users:
+            d = {
+                "fname": user.fname,
+                "lname": user.lname,
+                "username": user.username,
+                "password": user.password,
+                "email": user.email,
+                "role_names": [r.name for r in user.roles]
+            }
+            user_list.append(d)
+        return user_list
 
 
 def q_users_last_active():
